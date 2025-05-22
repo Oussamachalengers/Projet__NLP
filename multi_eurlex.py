@@ -55,7 +55,7 @@ _LABEL_LEVELS = ["level_1", "level_2", "level_3"]
 class MultiEurlexConfig(datasets.BuilderConfig):
     """BuilderConfig for MultiEURLEX."""
 
-    def __init__(self, language, label_level, languages=None, **kwargs):
+    def __init__(self, language=None, label_level=None, languages=None, **kwargs):
         """BuilderConfig for MultiEURLEX.
         
         Args:
@@ -64,8 +64,10 @@ class MultiEurlexConfig(datasets.BuilderConfig):
             languages: Language list, if `language` is `all_languages`.
             **kwargs: keyword arguments forwarded to super.
         """
+        # Assurez-vous que les arguments name, version, description sont passés au parent
         super(MultiEurlexConfig, self).__init__(**kwargs)
         
+        # Définir les attributs spécifiques
         self.language = language
         self.label_level = label_level
         
