@@ -8198,6 +8198,9 @@ class MultiEURLEXConfig(datasets.BuilderConfig):
         language: One of ar,bg,de,el,en,es,fr,hi,ru,sw,th,tr,ur,vi,zh, or all_languages
           **kwargs: keyword arguments forwarded to super.
         """
+        # Retirer le paramètre trust_remote_code s'il existe
+        if 'trust_remote_code' in kwargs:
+            kwargs.pop('trust_remote_code')
         super(MultiEURLEXConfig, self).__init__(**kwargs)
         self.language = language
         self.label_level = label_level
