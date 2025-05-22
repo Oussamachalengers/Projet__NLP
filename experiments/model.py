@@ -5,6 +5,12 @@
 import tensorflow as tf
 import copy
 import os
+import sys
+
+# Ajouter le répertoire parent au path pour trouver les modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Importer après avoir ajouté le path
 from data import MODELS_DIR
 from transformers.activations_tf import get_tf_activation
 from transformers import AutoConfig, TFAutoModel, TFMT5EncoderModel

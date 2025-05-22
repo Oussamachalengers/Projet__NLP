@@ -7,6 +7,12 @@ import numpy as np
 from scipy.special import expit
 import tensorflow as tf
 from tensorflow_addons.metrics import MeanMetricWrapper
+import sys
+
+# Ajouter le répertoire parent au path pour trouver les modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Importer les modules après avoir ajouté le répertoire parent au path
 from experiments.model import Classifier, NATIVE_BERT
 from experiments.data_loader import SampleGenerator
 from data import MODELS_DIR, DATA_DIR
@@ -92,11 +98,32 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
     LOGGER.info('----------------------------------------\n')
 
     # Load dataset
-    train_dataset = load_dataset('multi_eurlex', language='all_languages',
-                                 languages=train_langs if multilingual_train else [train_lang],
-                                 label_level=label_level, split='train')
-    eval_dataset = load_dataset('multi_eurlex', language='all_languages',
-                                languages=eval_langs, label_level=label_level)
+    # Modification pour éviter les erreurs de compatibilité de structure de données
+    # Utiliser directement la langue d'entraînement au lieu de 'all_languages'
+    train_dataset = load_dataset('multi_eurlex', 
+                                 language=train_lang,  # Utiliser uniquement la langue spécifiée
+                                 label_level=label_level, 
+                                 split='train', 
+                                 trust_remote_code=True)
+    
+    # Chargement d'évaluation séparément pour chaque langue
+    # Cela évite les problèmes de casting entre différentes structures
+    eval_datasets = {}
+    validation_datasets = {}
+    
+    # Commencer par la langue d'entraînement comme référence
+    # Charger les splits séparément
+    eval_datasets[train_lang] = load_dataset('multi_eurlex', 
+                                           language=train_lang, 
+                                           label_level=label_level, 
+                                           split='test', 
+                                           trust_remote_code=True)
+                                           
+    validation_datasets[train_lang] = load_dataset('multi_eurlex', 
+                                                 language=train_lang, 
+                                                 label_level=label_level, 
+                                                 split='validation', 
+                                                 trust_remote_code=True)
 
     # Instantiate training / development generators
     LOGGER.info(f'{len(train_dataset)} documents will be used for training')
@@ -106,9 +133,9 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
                                       bert_model_path=bert_path, batch_size=batch_size, shuffle=True,
                                       multilingual_train=multilingual_train, max_document_length=max_document_length)
 
-    LOGGER.info(f'{len(eval_dataset["validation"])} documents will be used for development')
+    LOGGER.info(f'{len(validation_datasets[train_lang])} documents will be used for development')
     dev_generator = SampleGenerator(
-        dataset=eval_dataset['validation'][:eval_samples if eval_samples else len(eval_dataset['validation'])],
+        dataset=validation_datasets[train_lang][:eval_samples if eval_samples else len(validation_datasets[train_lang])],
         label_index=label_index,
         lang=train_langs if multilingual_train else train_lang,
         bert_model_path=bert_path, batch_size=batch_size, shuffle=False,
@@ -173,12 +200,32 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
 
     # Re-instantiate development generator
     dev_generator = SampleGenerator(
-        dataset=eval_dataset['validation'][:eval_samples if eval_samples else len(eval_dataset['validation'])],
+        dataset=validation_datasets[train_lang][:eval_samples if eval_samples else len(validation_datasets[train_lang])],
         label_index=label_index, lang=train_lang,
         bert_model_path=bert_path, batch_size=batch_size, shuffle=False,
         max_document_length=max_document_length)
 
     for lang_code in eval_langs:
+        # Charger le dataset pour la langue actuelle si pas encore chargé
+        if lang_code != train_lang and lang_code not in eval_datasets:
+            try:
+                LOGGER.info(f'Chargement du dataset de test pour la langue: {lang_code}')
+                eval_datasets[lang_code] = load_dataset('multi_eurlex', 
+                                                        language=lang_code,
+                                                        label_level=label_level, 
+                                                        split='test', 
+                                                        trust_remote_code=True)
+                
+                LOGGER.info(f'Chargement du dataset de validation pour la langue: {lang_code}')
+                validation_datasets[lang_code] = load_dataset('multi_eurlex', 
+                                                             language=lang_code,
+                                                             label_level=label_level, 
+                                                             split='validation', 
+                                                             trust_remote_code=True)
+            except Exception as e:
+                LOGGER.error(f'Erreur lors du chargement du dataset pour {lang_code}: {str(e)}')
+                continue
+                
         # Set target language
         dev_generator.lang = lang_code
         # Initialize score matrices
@@ -208,11 +255,31 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
     LOGGER.info('-' * 100)
 
     # Instantiate test generator
-    test_generator = SampleGenerator(dataset=eval_dataset['test'][:eval_samples if eval_samples else len(eval_dataset['test'])],
+    test_generator = SampleGenerator(dataset=eval_datasets[train_lang][:eval_samples if eval_samples else len(eval_datasets[train_lang])],
                                      label_index=label_index, lang=train_lang,
                                      bert_model_path=bert_path, batch_size=batch_size, shuffle=False,
                                      max_document_length=max_document_length)
     for lang_code in eval_langs:
+        # Charger le dataset pour la langue actuelle si pas encore chargé
+        if lang_code != train_lang and lang_code not in eval_datasets:
+            try:
+                LOGGER.info(f'Chargement du dataset de test pour la langue: {lang_code}')
+                eval_datasets[lang_code] = load_dataset('multi_eurlex', 
+                                                        language=lang_code,
+                                                        label_level=label_level, 
+                                                        split='test', 
+                                                        trust_remote_code=True)
+                
+                LOGGER.info(f'Chargement du dataset de validation pour la langue: {lang_code}')
+                validation_datasets[lang_code] = load_dataset('multi_eurlex', 
+                                                             language=lang_code,
+                                                             label_level=label_level, 
+                                                             split='validation', 
+                                                             trust_remote_code=True)
+            except Exception as e:
+                LOGGER.error(f'Erreur lors du chargement du dataset pour {lang_code}: {str(e)}')
+                continue
+                
         # Set target language
         test_generator.lang = lang_code
         # Initialize score matrices

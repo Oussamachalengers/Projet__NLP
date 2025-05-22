@@ -16,10 +16,25 @@ class SampleGenerator(tf.keras.utils.Sequence):
                  batch_size: int = 8,
                  shuffle: bool = True,
                  max_document_length: int = 512):
-        self.documents = [{'celex_id': dataset['celex_id'][k],
-                           'text': dataset['text'][k],
-                           'labels': dataset['labels'][k]}
-                          for k in range(len(dataset['text']))]
+        # Déterminer si les données sont multilingues ou monolingues
+        sample_text = dataset['text'][0]
+        self.is_multilingual_data = isinstance(sample_text, dict)
+        
+        # Adapter le format des documents en fonction de la structure des données
+        if self.is_multilingual_data:
+            # Format multilingue original (dictionnaire de langues)
+            self.documents = [{'celex_id': dataset['celex_id'][k],
+                              'text': dataset['text'][k],
+                              'labels': dataset['labels'][k]}
+                             for k in range(len(dataset['text']))]
+        else:
+            # Format monolingue (texte direct sans dictionnaire)
+            # On crée un dictionnaire pour la langue actuelle
+            current_lang = lang[0] if isinstance(lang, list) else lang
+            self.documents = [{'celex_id': dataset['celex_id'][k],
+                              'text': {current_lang: dataset['text'][k]},
+                              'labels': dataset['labels'][k]}
+                             for k in range(len(dataset['text']))]
         self.batch_size = batch_size
         self.lang = lang
         self.label_index = label_index
