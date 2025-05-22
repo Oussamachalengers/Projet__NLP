@@ -113,9 +113,9 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
         # Nous sommes probablement sur Colab
         # Vérifions différentes possibilités pour le chemin du module
         possible_paths = [
-            '/Projet__NLP/multi_eurlex',
-            '/Projet__NLP/multi-eurlex/multi-eurlex',
-            '/Projet__NLP',
+            './multi_eurlex',
+            './multi-eurlex/multi-eurlex',
+            './',
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ]
         
