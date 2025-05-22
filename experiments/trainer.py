@@ -106,6 +106,37 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
                                  split='train', 
                                  trust_remote_code=True)
     
+    # Code pour adapter le chemin de recherche pour multi_eurlex.py
+    import os
+    # Vérifier si nous sommes sur Colab (dossier /content existe)
+    if os.path.exists('/content'):
+        # Nous sommes probablement sur Colab
+        # Vérifions différentes possibilités pour le chemin du module
+        possible_paths = [
+            '/Projet__NLP/multi_eurlex',
+            '/Projet__NLP/multi-eurlex/multi-eurlex',
+            '/Projet__NLP',
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        ]
+        
+        module_found = False
+        for path in possible_paths:
+            if os.path.exists(os.path.join(path, 'multi_eurlex.py')):
+                # Ajouter ce chemin au début de sys.path
+                sys.path.insert(0, path)
+                LOGGER.info(f"Module multi_eurlex.py trouvé dans {path}")
+                module_found = True
+                break
+        
+        if not module_found:
+            # Si le module n'est pas trouvé, le créer
+            LOGGER.info("Module multi_eurlex.py non trouvé, création d'une copie locale...")
+            os.makedirs('/content/Projet__NLP/multi_eurlex', exist_ok=True)
+            # Copier depuis le dépôt s'il existe
+            if os.path.exists('/content/Projet__NLP/multi-eurlex/multi-eurlex/multi_eurlex.py'):
+                os.system('cp /content/Projet__NLP/multi-eurlex/multi-eurlex/multi_eurlex.py /content/Projet__NLP/multi_eurlex/')
+                sys.path.insert(0, '/content/Projet__NLP/multi_eurlex')
+    
     # Chargement d'évaluation séparément pour chaque langue
     # Cela évite les problèmes de casting entre différentes structures
     eval_datasets = {}
