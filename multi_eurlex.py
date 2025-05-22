@@ -42,8 +42,8 @@ _CITATION = """\
   location = {Punta Cana, Dominican Republic},
 }"""
 
-# Source data: "https://zenodo.org/record/5363165/files/multi_eurlex.tar.gz"
-DATA_URL = "data/multi_eurlex.tar.gz"
+# Utiliser l'URL source directement
+DATA_URL = "https://zenodo.org/record/5363165/files/multi_eurlex.tar.gz"
 
 _LANGUAGES = [
     "en",
