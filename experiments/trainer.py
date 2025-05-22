@@ -104,7 +104,16 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
                                  language=train_lang,  # Utiliser uniquement la langue spécifiée
                                  label_level=label_level, 
                                  split='train', 
+                                 cache_dir='./cache/datasets',  # Spécifier explicitement le cache
                                  trust_remote_code=True)
+    
+    # Débogage du dataset
+    print(f"Dataset structure: {train_dataset}")
+    print(f"Dataset features: {train_dataset.features}")
+    print(f"Dataset 'text' field type: {type(train_dataset['text'])}")
+    print(f"Dataset 'text' field length: {len(train_dataset['text'])}")
+    if len(train_dataset['text']) > 0:
+        print(f"Premier exemple de texte: {train_dataset['text'][0][:100]}...")  # Afficher les 100 premiers caractères
     
     # Note: Pour Colab, créer le fichier multi_eurlex.py manuellement
     
@@ -116,16 +125,18 @@ def train(bert_path, native_bert, use_adapters, use_ln, bottleneck_size, n_froze
     # Commencer par la langue d'entraînement comme référence
     # Charger les splits séparément
     eval_datasets[train_lang] = load_dataset('multi_eurlex', 
-                                           language=train_lang, 
-                                           label_level=label_level, 
-                                           split='test', 
-                                           trust_remote_code=True)
+                                            language=train_lang, 
+                                            label_level=label_level, 
+                                            split='test', 
+                                            cache_dir='./cache/datasets',  # Spécifier explicitement le cache
+                                            trust_remote_code=True)
                                            
     validation_datasets[train_lang] = load_dataset('multi_eurlex', 
-                                                 language=train_lang, 
-                                                 label_level=label_level, 
-                                                 split='validation', 
-                                                 trust_remote_code=True)
+                                                  language=train_lang, 
+                                                  label_level=label_level, 
+                                                  split='validation', 
+                                                  cache_dir='./cache/datasets',  # Spécifier explicitement le cache
+                                                  trust_remote_code=True)
 
     # Instantiate training / development generators
     LOGGER.info(f'{len(train_dataset)} documents will be used for training')
